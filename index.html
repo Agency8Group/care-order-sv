@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>조리원 주문 시스템</title>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>"
+        />
+        <!-- 보안 강화: API 설정 파일 로드 -->
+        <script src="proxy-config.js"></script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #ffffff;
+                padding: 20px;
+                min-height: 100vh;
+                position: relative;
+                color: #000000;
+            }
+
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+                overflow: hidden;
+                border: 1px solid #e5e5e5;
+            }
+
+            /* 로그인 페이지용 컴팩트 컨테이너 */
+            .container.login-mode {
+                max-width: 500px;
+                margin: 0 auto;
+                background: transparent;
+                box-shadow: none;
+                overflow: visible;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                border: none;
+            }
+
+            .container.login-mode .header {
+                display: none;
+            }
+
+            .header {
+                background: #000000;
+                color: white;
+                padding: 24px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                font-weight: 600;
+                letter-spacing: -0.025em;
+            }
+
+            .section {
+                padding: 24px;
+                border-bottom: 1px solid #e5e5e5;
+            }
+
+            .section:last-child {
+                border-bottom: none;
+            }
+
+            /* 컴팩트 로그인 섹션 */
+            #loginSection {
+                max-width: 400px;
+                margin: 50px auto;
+                padding: 32px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                border: 1px solid #e5e5e5;
+                position: relative;
+            }
+
+            /* 로그인 페이지용 헤더 */
+            .login-header {
+                background: #000000;
+                color: white;
+                padding: 20px;
+                border-radius: 12px 12px 0 0;
+                margin: -32px -32px 24px -32px;
+                text-align: center;
+            }
+
+            .login-header h1 {
+                font-size: 1.5rem;
+                font-weight: 600;
+                letter-spacing: -0.025em;
+                margin: 0;
+            }
+
+            #loginSection h2 {
+                margin-bottom: 24px;
+                color: #000000;
+                font-size: 1.5rem;
+                font-weight: 600;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+                text-align: left;
+            }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 500;
+                color: #000000;
+                font-size: 0.875rem;
+            }
+
+            .form-group input,
+            .form-group select {
+                width: 100%;
+                padding: 12px 16px;
+                border: 1px solid #e5e5e5;
+                border-radius: 8px;
+                font-size: 1rem;
+                transition: all 0.2s ease;
+                background: white;
+                color: #000000;
+            }
+
+            .form-group input:focus {
+                outline: none;
+                border-color: #000000;
+                box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+            }
+
+            #loginBtn {
+                width: 100%;
+                padding: 12px 16px;
+                font-size: 1rem;
+                font-weight: 500;
+                border-radius: 8px;
+                margin-top: 16px;
+                background: #000000;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                border: none;
+                color: white;
+                transition: all 0.2s ease;
+            }
+
+            #loginBtn:hover {
+                background: #333333;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .btn {
+                background: #000000;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                margin-right: 8px;
+                transition: all 0.2s ease;
+                font-weight: 500;
+            }
+
+            .btn:hover {
+                background: #333333;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .btn:disabled {
+                background: #cccccc;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+            .btn-success {
+                background: #000000;
+                width: 100%;
+                margin: 8px 0;
+            }
+
+            .btn-success:hover {
+                background: #333333;
+            }
+
+            .btn-danger {
+                background: #000000;
+                width: 100%;
+                margin: 8px 0;
+            }
+
+            .btn-danger:hover {
+                background: #333333;
+            }
+
+            .message {
+                padding: 12px 16px;
+                margin: 12px 0;
+                border-radius: 8px;
+                border: 1px solid;
+                font-weight: 500;
+            }
+
+            .message.success {
+                background: #f8f8f8;
+                color: #000000;
+                border-color: #e5e5e5;
+            }
+
+            .message.error {
+                background: #f8f8f8;
+                color: #000000;
+                border-color: #e5e5e5;
+            }
+
+            .message.info {
+                background: #f8f8f8;
+                color: #000000;
+                border-color: #e5e5e5;
+            }
+
+            /* 중앙 알림 모달 스타일 */
+            .notification-modal {
+                display: none;
+                position: fixed;
+                z-index: 2000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                animation: fadeIn 0.2s ease;
+            }
+
+            .notification-content {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 24px;
+                border-radius: 12px;
+                box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+                text-align: center;
+                min-width: 320px;
+                max-width: 400px;
+                animation: slideIn 0.2s ease;
+                border: 1px solid #e5e5e5;
+            }
+
+            .notification-icon {
+                font-size: 48px;
+                margin-bottom: 16px;
+            }
+
+            .notification-title {
+                font-size: 1.125rem;
+                font-weight: 600;
+                margin-bottom: 12px;
+                color: #000000;
+            }
+
+            .notification-message {
+                font-size: 0.875rem;
+                color: #666666;
+                line-height: 1.5;
+                margin-bottom: 20px;
+            }
+
+            .notification-close {
+                background: #000000;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                font-weight: 500;
+                transition: all 0.2s ease;
+            }
+
+            .notification-close:hover {
+                background: #333333;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translate(-50%, -60%);
+                }
+                to {
+                    opacity: 1;
+                    transform: translate(-50%, -50%);
+                }
+            }
+
+            .budget-info {
+                background: #000000;
+                color: white;
+                padding: 20px;
+                border-radius: 12px;
+                margin: 0;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }
+
+            .budget-info h3 {
+                margin-bottom: 16px;
+                color: white;
+                text-align: center;
+                font-size: 1.125rem;
+                font-weight: 600;
+            }
+
+            .budget-item {
+                display: flex;
+                justify-content: space-between;
+                margin: 8px 0;
+                padding: 8px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                font-weight: 500;
+            }
+
+            .budget-item:last-child {
+                border-bottom: none;
+                font-weight: 600;
+                font-size: 1rem;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .product-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 16px;
+                margin: 16px 0;
+            }
+
+            .product-card {
+                border: 1px solid #e5e5e5;
+                border-radius: 12px;
+                padding: 16px;
+                text-align: center;
+                background: white;
+                transition: all 0.2s ease;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                display: flex;
+                flex-direction: column;
+                height: 350px;
+                position: relative;
+            }
+
+            .product-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 10px 15px rgba(0, 0, 0, 0.1);
+                border-color: #000000;
+            }
+
+            /* 상품 이미지 스타일 */
+            .product-image {
+                width: 100%;
+                height: 140px;
+                background: #f8f8f8;
+                border-radius: 8px;
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .product-image img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                border-radius: 8px;
+                transition: transform 0.2s ease;
+                background: white;
+            }
+
+            .product-image-placeholder {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: #cccccc;
+                font-size: 24px;
+                height: 100%;
+            }
+
+            .product-image-placeholder span {
+                font-size: 12px;
+                margin-top: 4px;
+                color: #999999;
+                font-weight: 500;
+            }
+
+            /* 이미지 로딩 상태 */
+            .product-image.loading {
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: loading 1.5s infinite;
+            }
+
+            /* 이미지 확대 효과 */
+            .product-image:hover img {
+                transform: scale(1.05);
+                transition: transform 0.2s ease;
+            }
+
+            .product-card h4 {
+                margin-bottom: 12px;
+                color: #000000;
+                font-size: 0.875rem;
+                line-height: 1.4;
+                height: 40px;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                flex-grow: 1;
+                font-weight: 500;
+            }
+
+            .product-card .price {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #000000;
+                margin-bottom: 4px;
+            }
+
+            .product-card .unit {
+                font-size: 0.75rem;
+                color: #666666;
+                margin-bottom: 12px;
+                font-style: italic;
+            }
+
+            .quantity-control {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                margin-top: auto;
+            }
+
+            .quantity-control button {
+                background: #000000;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 28px;
+                height: 28px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                transition: all 0.2s ease;
+            }
+
+            .quantity-control button:hover {
+                background: #333333;
+                transform: scale(1.05);
+            }
+
+            .quantity-control input {
+                width: 50px;
+                text-align: center;
+                border: 1px solid #e5e5e5;
+                border-radius: 6px;
+                padding: 6px;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #000000;
+                background: white;
+                transition: all 0.2s ease;
+            }
+
+            .quantity-control input:focus {
+                outline: none;
+                border-color: #000000;
+                box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+            }
+
+            .cart {
+                background: #f8f8f8;
+                padding: 20px;
+                border-radius: 12px;
+                margin: 0;
+                border: 1px solid #e5e5e5;
+            }
+
+            .cart h3 {
+                margin-bottom: 12px;
+                color: #000000;
+                font-size: 1rem;
+                font-weight: 600;
+            }
+
+            .cart-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border-bottom: 1px solid #e5e5e5;
+                font-weight: 500;
+            }
+
+            .cart-item:last-child {
+                border-bottom: none;
+            }
+
+            .cart-total {
+                font-weight: 600;
+                font-size: 1.125rem;
+                color: #000000;
+                text-align: right;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #e5e5e5;
+            }
+
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 1000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+            }
+
+            .modal-content {
+                background-color: white;
+                margin: 15% auto;
+                padding: 24px;
+                border-radius: 12px;
+                width: 90%;
+                max-width: 400px;
+                box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+                border: 1px solid #e5e5e5;
+            }
+
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+
+            .close {
+                color: #666666;
+                font-size: 24px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: color 0.2s ease;
+            }
+
+            .close:hover {
+                color: #000000;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            /* 아코디언 스타일 */
+            .accordion-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: pointer;
+                padding: 12px 0;
+                border-bottom: 1px solid #e5e5e5;
+                transition: all 0.2s ease;
+            }
+
+            .accordion-header:hover {
+                background: #f8f8f8;
+                border-radius: 8px;
+                padding: 12px;
+                margin: 0 -12px;
+            }
+
+            .accordion-header h2 {
+                margin: 0;
+                color: #000000;
+                font-weight: 600;
+                font-size: 1rem;
+            }
+
+            .accordion-icon {
+                font-size: 16px;
+                color: #000000;
+                transition: transform 0.2s ease;
+                font-weight: 600;
+            }
+
+            .accordion-content {
+                padding: 16px 0;
+                border-top: 1px solid #e5e5e5;
+            }
+
+            /* 로딩 상태 스타일 */
+            .loading-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 9999;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 4px solid #f3f4f6;
+                border-top: 4px solid #000000;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .loading-content {
+                background: white;
+                padding: 24px;
+                border-radius: 12px;
+                text-align: center;
+                box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+                border: 1px solid #e5e5e5;
+            }
+
+            .loading-text {
+                margin-top: 16px;
+                color: #000000;
+                font-size: 1rem;
+                font-weight: 500;
+            }
+
+            .loading-progress {
+                width: 100%;
+                height: 6px;
+                background: #e5e5e5;
+                border-radius: 3px;
+                margin-top: 16px;
+                overflow: hidden;
+            }
+
+            .loading-progress-bar {
+                height: 100%;
+                background: #000000;
+                border-radius: 3px;
+                transition: width 0.3s ease;
+                width: 0%;
+            }
+
+            .btn-loading {
+                position: relative;
+                pointer-events: none;
+            }
+
+            .btn-loading::after {
+                content: "";
+                position: absolute;
+                width: 16px;
+                height: 16px;
+                margin: auto;
+                border: 2px solid transparent;
+                border-top-color: #ffffff;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .skeleton-loading {
+                background: linear-gradient(
+                    90deg,
+                    #f0f0f0 25%,
+                    #e0e0e0 50%,
+                    #f0f0f0 75%
+                );
+                background-size: 200% 100%;
+                animation: loading 1.5s infinite;
+            }
+
+            @keyframes loading {
+                0% {
+                    background-position: 200% 0;
+                }
+                100% {
+                    background-position: -200% 0;
+                }
+            }
+
+            .skeleton-text {
+                height: 20px;
+                margin: 10px 0;
+                border-radius: 4px;
+            }
+
+            .skeleton-card {
+                height: 120px;
+                border-radius: 8px;
+                margin: 10px 0;
+            }
+
+            /* 단계별 진행 상태 */
+            .progress-steps {
+                display: flex;
+                justify-content: space-between;
+                margin: 20px 0;
+                position: relative;
+            }
+
+            .progress-step {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                position: relative;
+                z-index: 2;
+            }
+
+            .step-circle {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: #e5e5e5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                color: #666666;
+                margin-bottom: 6px;
+                transition: all 0.2s ease;
+                font-size: 0.875rem;
+            }
+
+            .step-circle.active {
+                background: #000000;
+                color: white;
+            }
+
+            .step-circle.completed {
+                background: #333333;
+                color: white;
+            }
+
+            .step-label {
+                font-size: 0.75rem;
+                color: #666666;
+                text-align: center;
+                max-width: 80px;
+                font-weight: 500;
+            }
+
+            .progress-line {
+                position: absolute;
+                top: 16px;
+                left: 16px;
+                right: 16px;
+                height: 2px;
+                background: #e5e5e5;
+                z-index: 1;
+            }
+
+            .progress-fill {
+                height: 100%;
+                background: #000000;
+                transition: width 0.3s ease;
+                width: 0%;
+            }
+
+            /* 메인 레이아웃 스타일 */
+            .main-layout {
+                display: flex;
+                gap: 20px;
+                min-height: 600px;
+            }
+
+            .left-panel {
+                flex: 2;
+                background: #f8f8f8;
+                border-radius: 12px;
+                padding: 20px;
+            }
+
+            .right-panel {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                min-width: 300px;
+            }
+
+            .right-panel .section {
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                margin-bottom: 0;
+                border: 1px solid #e5e5e5;
+            }
+
+            /* 모바일 반응형 */
+            @media (max-width: 768px) {
+                .main-layout {
+                    flex-direction: column;
+                    gap: 16px;
+                }
+
+                .left-panel,
+                .right-panel {
+                    flex: none;
+                    width: 100%;
+                }
+
+                .right-panel {
+                    min-width: auto;
+                }
+
+                .container {
+                    max-width: 100%;
+                    margin: 0;
+                    border-radius: 0;
+                }
+
+                body {
+                    padding: 10px;
+                }
+
+                .product-grid {
+                    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                    gap: 12px;
+                }
+
+                .product-card {
+                    height: 320px;
+                    padding: 12px;
+                }
+
+                .product-image {
+                    height: 120px;
+                }
+
+                .product-card h4 {
+                    font-size: 0.8rem;
+                    height: 36px;
+                }
+
+                .header h1 {
+                    font-size: 1.5rem;
+                }
+            }
+
+            /* 태블릿 반응형 */
+            @media (min-width: 769px) and (max-width: 1024px) {
+                .main-layout {
+                    gap: 16px;
+                }
+
+                .left-panel {
+                    flex: 1.5;
+                }
+
+                .right-panel {
+                    flex: 1;
+                    min-width: 280px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- 로딩 오버레이 -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <div class="loading-text" id="loadingText">처리 중...</div>
+                <div class="loading-progress">
+                    <div
+                        class="loading-progress-bar"
+                        id="loadingProgressBar"
+                    ></div>
+                </div>
+                <!-- 단계별 진행 상태 -->
+                <div
+                    class="progress-steps"
+                    id="progressSteps"
+                    style="display: none"
+                >
+                    <div class="progress-line">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step1">1</div>
+                        <div class="step-label">요청 전송</div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step2">2</div>
+                        <div class="step-label">서버 처리</div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step3">3</div>
+                        <div class="step-label">데이터 저장</div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step4">4</div>
+                        <div class="step-label">완료</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 중앙 알림 모달 -->
+        <div id="notificationModal" class="notification-modal">
+            <div class="notification-content">
+                <div class="notification-icon" id="notificationIcon">ℹ️</div>
+                <div class="notification-title" id="notificationTitle">알림</div>
+                <div class="notification-message" id="notificationMessage">메시지가 여기에 표시됩니다.</div>
+                <button class="notification-close" onclick="closeNotification()">확인</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- 헤더 -->
+            <div class="header">
+                <h1>조리원 주문 시스템</h1>
+            </div>
+
+            <!-- 컴팩트 로그인 섹션 -->
+            <div id="loginSection" class="section">
+                <div class="login-header">
+                    <h1>조리원 주문 시스템</h1>
+                </div>
+                <h2>로그인</h2>
+                <form id="loginForm" onsubmit="handleLogin(); return false;">
+                    <div class="form-group">
+                        <label for="userId">조리원 ID</label>
+                        <input
+                            type="text"
+                            id="userId"
+                            placeholder="ID를 입력하세요"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="pin">PIN 번호</label>
+                        <input
+                            type="password"
+                            id="pin"
+                            placeholder="PIN을 입력하세요"
+                            required
+                        />
+                    </div>
+                    <button type="submit" id="loginBtn" class="btn">
+                        로그인
+                    </button>
+                </form>
+                <div id="loginMessage"></div>
+            </div>
+
+            <!-- 메인 주문 섹션 (로그인 후 표시) -->
+            <div id="mainSection" class="section hidden">
+                <!-- 좌우 분리 레이아웃 -->
+                <div class="main-layout">
+                    <!-- 좌측: 상품 목록 -->
+                    <div class="left-panel">
+                        <div class="section">
+                            <h2>🛍️ 상품 선택</h2>
+                            <div class="product-grid" id="productGrid">
+                                <!-- 상품들이 동적으로 추가됩니다 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 우측: 예산정보, 장바구니, 주문하기, 주문내역, 로그아웃 -->
+                    <div class="right-panel">
+                        <!-- 예산 정보 -->
+                        <div class="section">
+                            <div class="budget-info">
+                                <h3>💰 예산 정보</h3>
+                                <div id="budgetDetails">
+                                    <div class="budget-item">
+                                        <span>총 예산:</span>
+                                        <span id="totalBudget">-</span>
+                                    </div>
+                                    <div class="budget-item">
+                                        <span>이번 달 사용:</span>
+                                        <span id="monthlyUsed">-</span>
+                                    </div>
+                                    <div class="budget-item">
+                                        <span>남은 예산:</span>
+                                        <span id="remainingBudget">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 장바구니 -->
+                        <div class="section">
+                            <div class="cart">
+                                <h3>🛒 장바구니</h3>
+                                <div id="cartItems">
+                                    <p>장바구니가 비어있습니다.</p>
+                                </div>
+                                <div class="cart-total">
+                                    총 금액: <span id="cartTotal">0</span>원
+                                </div>
+                                <div id="budgetStatus" style="margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 14px; text-align: center;">
+                                    <!-- 예산 상태가 여기에 표시됩니다 -->
+                                </div>
+                            </div>
+                            <button id="orderBtn" class="btn btn-success" disabled>
+                                📦 주문하기
+                            </button>
+                        </div>
+
+                        <!-- 이번달 주문 내역 -->
+                        <div class="section">
+                            <div
+                                class="accordion-header"
+                                onclick="toggleOrderHistory()"
+                            >
+                                <h2>📋 이번달 주문 내역</h2>
+                                <span class="accordion-icon" id="orderHistoryIcon"
+                                    >▼</span
+                                >
+                            </div>
+                            <div
+                                class="accordion-content"
+                                id="orderHistoryContent"
+                                style="display: none"
+                            >
+                                <button id="refreshOrdersBtn" class="btn" style="width: 100%; margin-bottom: 10px;">
+                                    🔄 새로고침
+                                </button>
+                                <div id="orderHistory">
+                                    <p>이번달 주문 내역을 불러오는 중...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 로그아웃 -->
+                        <div class="section">
+                            <button id="logoutBtn" class="btn btn-danger">
+                                🚪 로그아웃
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // ===== 조리원 주문 시스템 - 프론트엔드 =====
+
+            // API URL 설정 (보안 강화)
+            const getApiUrl = () => {
+                // 프록시 설정에서 가져오기
+                if (window.API_CONFIG && window.API_CONFIG.endpoint) {
+                    return window.API_CONFIG.endpoint;
+                }
+                
+                // 환경 변수에서 가져오거나 기본값 사용
+                const envUrl = window.API_ENDPOINT || process.env.API_ENDPOINT;
+                if (envUrl) return envUrl;
+                
+                // 기본 URL (실제 배포 시 변경 필요)
+                return "https://script.google.com/macros/s/AKfycbznLcEt0igtQUd0v2iWlvyx6OUrSVj88xRltwE_Ez1UsMDajqeJvsePGjg8rw-gE3IJ/exec";
+            };
+
+            // API 호출 함수 (보안 강화)
+            const apiCall = async (action, data) => {
+                const apiUrl = getApiUrl();
+                const url = `${apiUrl}?action=${action}&data=${encodeURIComponent(JSON.stringify(data))}`;
+                
+                try {
+                    const response = await fetch(url);
+                    return await response.json();
+                } catch (error) {
+                    console.error('API 호출 오류:', error);
+                    throw error;
+                }
+            };
+
+            // 전역 변수
+            let currentUser = null;
+            let cart = [];
+            let loadingState = {
+                isActive: false,
+                progress: 0,
+                currentStep: 0,
+                steps: ["요청 전송", "서버 처리", "데이터 저장", "완료"],
+            };
+            let products = [
+                { id: 1, name: "배냇저고리", price: 2800, unit: "1ea", image: "resorce/배냇저고리.png" },
+                { id: 2, name: "속싸개", price: 4000, unit: "1ea", image: "resorce/속싸개.png" },
+                { id: 3, name: "엠보 손수건", price: 36300, unit: "100ea", image: "resorce/엠보 손수건.png" },
+                { id: 4, name: "엠보 나염 손수건", price: 3900, unit: "10ea", image: "resorce/엠보 나염 손수건.jpg" },
+                {
+                    id: 5,
+                    name: "스마트 8종 세트 (저고리/턱받이/손수건/손싸개/발싸개/겉싸개/모자/미니방수패드)",
+                    price: 27500,
+                    unit: "1ea",
+                    image: "resorce/스마트 8종 세트.png",
+                },
+                { id: 6, name: "스와들", price: 13800, unit: "1ea", image: "resorce/스와들.jpg" },
+                { id: 7, name: "블랭킷", price: 12100, unit: "1ea", image: "resorce/블랭킷.jpg" },
+                {
+                    id: 8,
+                    name: "하기스 네이처메이드 1단계 공용",
+                    price: 48000,
+                    unit: "1box (198ea)",
+                    image: "resorce/네이처메이드 1단계 공용.png",
+                },
+                { id: 9, name: "네임카드 핑크", price: 5000, unit: "100ea", image: "resorce/네임카드핑크.png" },
+                { id: 10, name: "네임카드 블루", price: 5000, unit: "100ea", image: "resorce/네임카드블루.png" },
+                { id: 11, name: "산모용 팔찌", price: 6100, unit: "20ea", image: "resorce/신생아 팔찌.png" },
+                {
+                    id: 12,
+                    name: "신생아용 팔찌 핑크",
+                    price: 6100,
+                    unit: "20ea",
+                    image: "resorce/신생아 팔찌.png",
+                },
+                {
+                    id: 13,
+                    name: "신생아용 팔찌 블루",
+                    price: 6100,
+                    unit: "20ea",
+                    image: "resorce/신생아 팔찌.png",
+                },
+                {
+                    id: 14,
+                    name: "정식품 베지밀 달콤한 비 두유",
+                    price: 44800,
+                    unit: "1box (64ea)",
+                    image: "resorce/베지밀달콤한비두유.png",
+                },
+            ];
+
+            // DOM 요소들
+            const loginSection = document.getElementById("loginSection");
+            const mainSection = document.getElementById("mainSection");
+            const loginBtn = document.getElementById("loginBtn");
+            const logoutBtn = document.getElementById("logoutBtn");
+            const orderBtn = document.getElementById("orderBtn");
+            const refreshOrdersBtn =
+                document.getElementById("refreshOrdersBtn");
+
+            // 초기화
+            document.addEventListener("DOMContentLoaded", function () {
+                setupEventListeners();
+                renderProducts();
+                // 초기 로그인 모드 설정
+                document.querySelector('.container').classList.add('login-mode');
+            });
+
+            // ===== 로딩 상태 관리 함수들 =====
+
+            // 로딩 시작
+            function startLoading(message = "처리 중...", showSteps = false) {
+                loadingState.isActive = true;
+                loadingState.progress = 0;
+                loadingState.currentStep = 0;
+
+                const overlay = document.getElementById("loadingOverlay");
+                const loadingText = document.getElementById("loadingText");
+                const progressSteps = document.getElementById("progressSteps");
+                const progressBar =
+                    document.getElementById("loadingProgressBar");
+
+                loadingText.textContent = message;
+                progressBar.style.width = "0%";
+
+                if (showSteps) {
+                    progressSteps.style.display = "flex";
+                    resetProgressSteps();
+                } else {
+                    progressSteps.style.display = "none";
+                }
+
+                overlay.style.display = "flex";
+            }
+
+            // 로딩 종료
+            function stopLoading() {
+                loadingState.isActive = false;
+                const overlay = document.getElementById("loadingOverlay");
+                overlay.style.display = "none";
+            }
+
+            // 진행률 업데이트
+            function updateProgress(progress, message = null) {
+                if (!loadingState.isActive) return;
+
+                loadingState.progress = progress;
+                const progressBar =
+                    document.getElementById("loadingProgressBar");
+                progressBar.style.width = progress + "%";
+
+                if (message) {
+                    const loadingText = document.getElementById("loadingText");
+                    loadingText.textContent = message;
+                }
+            }
+
+            // 다음 단계로 진행
+            function nextStep() {
+                if (!loadingState.isActive) return;
+
+                loadingState.currentStep++;
+                updateProgressSteps();
+
+                if (loadingState.currentStep >= loadingState.steps.length) {
+                    setTimeout(() => {
+                        stopLoading();
+                    }, 500);
+                }
+            }
+
+            // 진행 단계 업데이트
+            function updateProgressSteps() {
+                const steps = ["step1", "step2", "step3", "step4"];
+                const progressFill = document.getElementById("progressFill");
+
+                steps.forEach((stepId, index) => {
+                    const stepCircle = document.getElementById(stepId);
+                    if (index < loadingState.currentStep) {
+                        stepCircle.className = "step-circle completed";
+                    } else if (index === loadingState.currentStep) {
+                        stepCircle.className = "step-circle active";
+                    } else {
+                        stepCircle.className = "step-circle";
+                    }
+                });
+
+                const progressPercent =
+                    (loadingState.currentStep / (steps.length - 1)) * 100;
+                progressFill.style.width = progressPercent + "%";
+            }
+
+            // 진행 단계 초기화
+            function resetProgressSteps() {
+                const steps = ["step1", "step2", "step3", "step4"];
+                steps.forEach((stepId) => {
+                    const stepCircle = document.getElementById(stepId);
+                    stepCircle.className = "step-circle";
+                });
+                document.getElementById("progressFill").style.width = "0%";
+            }
+
+            // 버튼 로딩 상태 설정
+            function setButtonLoading(
+                button,
+                isLoading,
+                loadingText = "처리 중..."
+            ) {
+                if (isLoading) {
+                    button.disabled = true;
+                    button.classList.add("btn-loading");
+                    button.dataset.originalText = button.textContent;
+                    button.textContent = loadingText;
+                } else {
+                    button.disabled = false;
+                    button.classList.remove("btn-loading");
+                    if (button.dataset.originalText) {
+                        button.textContent = button.dataset.originalText;
+                    }
+                }
+            }
+
+            // 시뮬레이션된 지연 시간 (실제 API 호출 시간을 모방)
+            function simulateApiDelay(minMs = 800, maxMs = 2000) {
+                return new Promise((resolve) => {
+                    const delay = Math.random() * (maxMs - minMs) + minMs;
+                    setTimeout(resolve, delay);
+                });
+            }
+
+            // 이벤트 리스너 설정
+            function setupEventListeners() {
+                loginBtn.addEventListener("click", handleLogin);
+                logoutBtn.addEventListener("click", handleLogout);
+                orderBtn.addEventListener("click", handleOrder);
+                refreshOrdersBtn.addEventListener("click", loadOrderHistory);
+                
+                // ESC 키로 알림 닫기
+                document.addEventListener("keydown", function(event) {
+                    if (event.key === "Escape") {
+                        closeNotification();
+                    }
+                });
+                
+                // 알림 모달 외부 클릭 시 닫기
+                document.getElementById("notificationModal").addEventListener("click", function(event) {
+                    if (event.target === this) {
+                        closeNotification();
+                    }
+                });
+            }
+
+            // 로그인 처리
+            async function handleLogin() {
+                const userId = document.getElementById("userId").value.trim();
+                const pin = document.getElementById("pin").value.trim();
+
+                console.log("로그인 시도:", { userId, pin });
+
+                if (!userId || !pin) {
+                    showMessage(
+                        "조리원 ID와 PIN 번호를 입력해주세요.",
+                        "error",
+                        "loginMessage"
+                    );
+                    return;
+                }
+
+                // 로딩 상태 시작
+                startLoading("로그인 처리 중...", true);
+                setButtonLoading(loginBtn, true, "로그인 중...");
+
+                try {
+                    // 단계 1: 요청 전송
+                    updateProgress(10, "로그인 정보 전송 중...");
+                    await simulateApiDelay(300, 600);
+                    nextStep();
+
+                    const requestData = {
+                        userId: userId,
+                        pin: pin,
+                    };
+
+                    console.log("API 요청 데이터:", requestData);
+
+                    // 단계 2: 서버 처리
+                    updateProgress(30, "서버에서 인증 처리 중...");
+                    nextStep();
+                    await simulateApiDelay(500, 1000);
+
+                    const result = await apiCall('login', requestData);
+
+                    console.log("API 응답 결과:", result);
+                    console.log("응답 상세:", JSON.stringify(result, null, 2));
+
+                    // 단계 3: 데이터 저장
+                    updateProgress(70, "사용자 정보 로드 중...");
+                    nextStep();
+                    await simulateApiDelay(300, 600);
+
+                    if (result.status === "success") {
+                        currentUser = result.user;
+                        showMainSection();
+                        updateBudgetInfo(result.budget);
+
+                        // 단계 4: 완료
+                        updateProgress(100, "로그인 완료!");
+                        nextStep();
+                        await simulateApiDelay(200, 400);
+
+                        loadOrderHistory();
+                        showMessage("로그인 성공!", "success", "loginMessage");
+                    } else {
+                        showMessage(result.message, "error", "loginMessage");
+                    }
+                } catch (error) {
+                    console.error("로그인 오류:", error);
+                    showMessage(
+                        "로그인 중 오류가 발생했습니다: " + error.message,
+                        "error",
+                        "loginMessage"
+                    );
+                } finally {
+                    stopLoading();
+                    setButtonLoading(loginBtn, false);
+                }
+            }
+
+            // 로그아웃 처리
+            function handleLogout() {
+                currentUser = null;
+                cart = [];
+                showLoginSection();
+                clearCart();
+                showMessage("로그아웃되었습니다.", "info", "loginMessage");
+            }
+
+            // 메인 섹션 표시
+            function showMainSection() {
+                loginSection.classList.add("hidden");
+                mainSection.classList.remove("hidden");
+                document.querySelector('.container').classList.remove('login-mode');
+            }
+
+            // 로그인 섹션 표시
+            function showLoginSection() {
+                mainSection.classList.add("hidden");
+                loginSection.classList.remove("hidden");
+                document.querySelector('.container').classList.add('login-mode');
+                document.getElementById("userId").value = "";
+                document.getElementById("pin").value = "";
+            }
+
+            // 예산 정보 업데이트
+            function updateBudgetInfo(budget) {
+                document.getElementById("totalBudget").textContent =
+                    budget.totalBudget.toLocaleString() + "원";
+                document.getElementById("monthlyUsed").textContent =
+                    budget.monthlyTotal.toLocaleString() + "원";
+                document.getElementById("remainingBudget").textContent =
+                    budget.remainingBudget.toLocaleString() + "원";
+            }
+
+            // 상품 렌더링
+            function renderProducts() {
+                const productGrid = document.getElementById("productGrid");
+                productGrid.innerHTML = "";
+
+                products.forEach((product) => {
+                    const productCard = document.createElement("div");
+                    productCard.className = "product-card";
+                    
+                    // 이미지 HTML 생성
+                    const imageHtml = product.image 
+                        ? `<img src="${product.image}" alt="${product.name}" onerror="this.parentElement.innerHTML='<div class=\\'product-image-placeholder\\'><span>📷</span><span>이미지 없음</span></div>'">`
+                        : `<div class="product-image-placeholder">
+                            <span>📷</span>
+                            <span>이미지 없음</span>
+                           </div>`;
+
+                    productCard.innerHTML = `
+                        <div class="product-image">
+                            ${imageHtml}
+                        </div>
+                        <h4>${product.name}</h4>
+                        <div class="price">${product.price.toLocaleString()}원</div>
+                        <div class="unit">${product.unit}</div>
+                        <div class="quantity-control">
+                            <button onclick="decreaseQuantity(${product.id})">-</button>
+                            <input type="number" id="qty_${product.id}" value="0" min="0" max="99" onchange="updateQuantity(${product.id})">
+                            <button onclick="increaseQuantity(${product.id})">+</button>
+                        </div>
+                    `;
+                    productGrid.appendChild(productCard);
+                });
+            }
+
+            // 수량 증가
+            function increaseQuantity(productId) {
+                const input = document.getElementById(`qty_${productId}`);
+                const currentValue = parseInt(input.value) || 0;
+                const product = products.find((p) => p.id === productId);
+                
+                // 현재 남은 예산 확인
+                const remainingBudgetElement = document.getElementById("remainingBudget");
+                const remainingBudgetText = remainingBudgetElement ? remainingBudgetElement.textContent : "0원";
+                const remainingBudget = parseInt(remainingBudgetText.replace(/[^0-9]/g, "")) || 0;
+                
+                // 현재 장바구니 총액 계산 (현재 상품 제외)
+                let currentCartTotal = 0;
+                cart.forEach((item) => {
+                    if (item.id !== productId) {
+                        currentCartTotal += item.total;
+                    }
+                });
+                
+                // 추가할 상품의 가격
+                const additionalCost = product.price;
+                
+                // 예산 초과 여부 확인
+                if (currentCartTotal + additionalCost > remainingBudget) {
+                    showMessage(`예산을 초과하여 추가할 수 없습니다. (초과: ${(currentCartTotal + additionalCost - remainingBudget).toLocaleString()}원)`, "error");
+                    return;
+                }
+                
+                input.value = currentValue + 1;
+                updateQuantity(productId);
+            }
+
+            // 수량 감소
+            function decreaseQuantity(productId) {
+                const input = document.getElementById(`qty_${productId}`);
+                const currentValue = parseInt(input.value);
+                if (currentValue > 0) {
+                    input.value = currentValue - 1;
+                    updateQuantity(productId);
+                }
+            }
+
+            // 수량 업데이트
+            function updateQuantity(productId) {
+                const input = document.getElementById(`qty_${productId}`);
+                let quantity = parseInt(input.value) || 0;
+                const product = products.find((p) => p.id === productId);
+
+                // 현재 남은 예산 확인
+                const remainingBudgetElement = document.getElementById("remainingBudget");
+                const remainingBudgetText = remainingBudgetElement ? remainingBudgetElement.textContent : "0원";
+                const remainingBudget = parseInt(remainingBudgetText.replace(/[^0-9]/g, "")) || 0;
+                
+                // 현재 장바구니 총액 계산 (현재 상품 제외)
+                let currentCartTotal = 0;
+                cart.forEach((item) => {
+                    if (item.id !== productId) {
+                        currentCartTotal += item.total;
+                    }
+                });
+                
+                // 요청된 수량의 총 가격
+                const requestedTotal = product.price * quantity;
+                
+                // 예산 초과 여부 확인
+                if (currentCartTotal + requestedTotal > remainingBudget) {
+                    // 예산 내에서 가능한 최대 수량 계산
+                    const maxAffordableQuantity = Math.floor((remainingBudget - currentCartTotal) / product.price);
+                    
+                    if (maxAffordableQuantity <= 0) {
+                        showMessage(`예산 부족으로 추가할 수 없습니다.`, "error");
+                        input.value = "0";
+                        quantity = 0;
+                    } else {
+                        showMessage(`예산 초과로 수량이 ${maxAffordableQuantity}개로 조정되었습니다.`, "info");
+                        input.value = maxAffordableQuantity;
+                        quantity = maxAffordableQuantity;
+                    }
+                }
+
+                // 장바구니에서 기존 항목 제거
+                cart = cart.filter((item) => item.id !== productId);
+
+                // 수량이 있으면 장바구니에 추가
+                if (quantity > 0) {
+                    cart.push({
+                        id: productId,
+                        name: product.name,
+                        price: product.price,
+                        quantity: quantity,
+                        total: product.price * quantity,
+                    });
+                }
+
+                updateCart();
+            }
+
+            // 장바구니 업데이트
+            function updateCart() {
+                const cartItems = document.getElementById("cartItems");
+                const cartTotal = document.getElementById("cartTotal");
+
+                if (cart.length === 0) {
+                    cartItems.innerHTML = "<p>장바구니가 비어있습니다.</p>";
+                    cartTotal.textContent = "0";
+                    orderBtn.disabled = true;
+                    
+                    // 장바구니가 비어있을 때도 예산 상태 표시
+                    const remainingBudgetElement = document.getElementById("remainingBudget");
+                    const remainingBudgetText = remainingBudgetElement ? remainingBudgetElement.textContent : "0원";
+                    const remainingBudget = parseInt(remainingBudgetText.replace(/[^0-9]/g, "")) || 0;
+                    
+                    const budgetStatusDiv = document.getElementById("budgetStatus");
+                    budgetStatusDiv.innerHTML = `
+                        <div style="background: #f8f8f8; color: #000000; border: 1px solid #e5e5e5; padding: 10px; border-radius: 4px;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">💰 예산 현황</div>
+                            <div>사용 가능 예산: ${remainingBudget.toLocaleString()}원</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let total = 0;
+                cartItems.innerHTML = "";
+
+                cart.forEach((item) => {
+                    const itemDiv = document.createElement("div");
+                    itemDiv.className = "cart-item";
+                    itemDiv.innerHTML = `
+                    <span>${item.name} x ${item.quantity}</span>
+                    <span>${item.total.toLocaleString()}원</span>
+                `;
+                    cartItems.appendChild(itemDiv);
+                    total += item.total;
+                });
+
+                // 현재 남은 예산 확인
+                const remainingBudgetElement = document.getElementById("remainingBudget");
+                const remainingBudgetText = remainingBudgetElement ? remainingBudgetElement.textContent : "0원";
+                const remainingBudget = parseInt(remainingBudgetText.replace(/[^0-9]/g, "")) || 0;
+
+                // 예산 초과 여부 확인
+                const isOverBudget = total > remainingBudget;
+                const budgetStatusDiv = document.getElementById("budgetStatus");
+                
+                if (isOverBudget) {
+                    budgetStatusDiv.innerHTML = `
+                        <div style="background: #f8f8f8; color: #000000; border: 1px solid #e5e5e5; padding: 10px; border-radius: 4px;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">⚠️ 예산 초과</div>
+                            <div>초과 금액: ${(total - remainingBudget).toLocaleString()}원</div>
+                            <div>남은 예산: ${remainingBudget.toLocaleString()}원</div>
+                        </div>
+                    `;
+                } else {
+                    budgetStatusDiv.innerHTML = `
+                        <div style="background: #f8f8f8; color: #000000; border: 1px solid #e5e5e5; padding: 10px; border-radius: 4px;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">✅ 예산 내</div>
+                            <div>남은 예산: ${(remainingBudget - total).toLocaleString()}원</div>
+                            <div>사용 예정: ${total.toLocaleString()}원</div>
+                        </div>
+                    `;
+                }
+
+                cartTotal.textContent = total.toLocaleString();
+
+                // 예산 초과 시 주문 버튼 비활성화
+                orderBtn.disabled = isOverBudget;
+                if (isOverBudget) {
+                    orderBtn.title = "예산을 초과하여 주문할 수 없습니다.";
+                } else {
+                    orderBtn.title = "주문하기";
+                }
+            }
+
+            // 장바구니 초기화
+            function clearCart() {
+                cart = [];
+                products.forEach((product) => {
+                    const input = document.getElementById(`qty_${product.id}`);
+                    if (input) input.value = "0";
+                });
+                updateCart();
+            }
+
+            // 주문 처리
+            async function handleOrder() {
+                if (cart.length === 0) {
+                    showMessage("장바구니가 비어있습니다.", "error");
+                    return;
+                }
+
+                // 버튼 로딩 상태만 설정 (로딩 오버레이 없이)
+                setButtonLoading(orderBtn, true, "주문 처리 중...");
+
+                try {
+                    const orderData = {
+                        userId: currentUser.userId,
+                        pin: currentUser.pin,
+                        items: cart.map((item) => ({
+                            name: item.name,
+                            quantity: item.quantity,
+                            price: item.price,
+                        })),
+                    };
+
+                    const result = await apiCall('order', orderData);
+
+                    if (result.status === "success") {
+                        showMessage(
+                            `주문이 완료되었습니다! 남은 예산: ${result.remainingBudget.toLocaleString()}원`,
+                            "success"
+                        );
+                        updateBudgetInfo(result.budgetInfo);
+                        clearCart();
+                        loadOrderHistory();
+                    } else {
+                        showMessage(result.message, "error");
+                    }
+                } catch (error) {
+                    showMessage("주문 처리 중 오류가 발생했습니다.", "error");
+                } finally {
+                    setButtonLoading(orderBtn, false);
+                }
+            }
+
+            // 주문 내역 로드
+            async function loadOrderHistory() {
+                if (!currentUser) return;
+
+                // 간단한 로딩 표시 (단계별 진행 없이)
+                startLoading("주문 내역 불러오는 중...", false);
+                setButtonLoading(refreshOrdersBtn, true, "새로고침 중...");
+
+                const orderHistory = document.getElementById("orderHistory");
+                orderHistory.innerHTML =
+                    "<p>이번달 주문 내역을 불러오는 중...</p>";
+
+                try {
+                    // 진행률 업데이트
+                    updateProgress(30, "서버에서 데이터 요청 중...");
+                    await simulateApiDelay(400, 800);
+
+                    const result = await apiCall('getOrders', {
+                        userId: currentUser.userId,
+                    });
+
+                    updateProgress(70, "주문 내역 처리 중...");
+                    await simulateApiDelay(300, 600);
+
+                    updateProgress(100, "완료!");
+                    await simulateApiDelay(200, 400);
+
+                    if (result.status === "success") {
+                        renderOrderHistory(result.orders);
+                    } else {
+                        orderHistory.innerHTML =
+                            "<p>이번달 주문 내역을 불러올 수 없습니다.</p>";
+                    }
+                } catch (error) {
+                    orderHistory.innerHTML =
+                        "<p>이번달 주문 내역을 불러오는 중 오류가 발생했습니다.</p>";
+                } finally {
+                    stopLoading();
+                    setButtonLoading(refreshOrdersBtn, false);
+                }
+            }
+
+            // 주문 내역 렌더링
+            function renderOrderHistory(orders) {
+                const orderHistory = document.getElementById("orderHistory");
+
+                if (orders.length === 0) {
+                    orderHistory.innerHTML =
+                        "<p>이번달 주문 내역이 없습니다.</p>";
+                    return;
+                }
+
+                // 주문 ID별로 그룹화
+                const orderGroups = {};
+                orders.forEach((order) => {
+                    if (!orderGroups[order.orderId]) {
+                        orderGroups[order.orderId] = [];
+                    }
+                    orderGroups[order.orderId].push(order);
+                });
+
+                let html = "";
+                Object.keys(orderGroups).forEach((orderId) => {
+                    const group = orderGroups[orderId];
+                    const firstOrder = group[0];
+                    const totalAmount = group.reduce(
+                        (sum, item) => sum + item.total,
+                        0
+                    );
+
+                    html += `
+                     <div style="border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 4px;">
+                         <h4>주문 ID: ${orderId}</h4>
+                         <p>주문일: ${new Date(
+                             firstOrder.timestamp
+                         ).toLocaleString("ko-KR", {
+                             timeZone: "Asia/Seoul",
+                         })}</p>
+                         <div style="background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                             <p><strong>📦 배송 정보</strong></p>
+                             <p>배송지: ${
+                                 firstOrder.deliveryAddress || "미입력"
+                             }</p>
+                             <p>수취인: ${firstOrder.recipient || "미입력"}</p>
+                             <p>연락처: ${firstOrder.phone || "미입력"}</p>
+                         </div>
+                         <ul>
+                             ${group
+                                 .map(
+                                     (item) => `
+                                 <li>${item.itemName} x ${
+                                         item.quantity
+                                     } = ${item.total.toLocaleString()}원</li>
+                             `
+                                 )
+                                 .join("")}
+                         </ul>
+                         <p><strong>총 금액: ${totalAmount.toLocaleString()}원</strong></p>
+                     </div>
+                 `;
+                });
+
+                orderHistory.innerHTML = html;
+            }
+
+            // 중앙 알림 표시
+            function showNotification(title, message, type = "info", autoClose = true) {
+                const modal = document.getElementById("notificationModal");
+                const icon = document.getElementById("notificationIcon");
+                const titleElement = document.getElementById("notificationTitle");
+                const messageElement = document.getElementById("notificationMessage");
+
+                // 타입에 따른 아이콘 설정
+                const icons = {
+                    success: "✅",
+                    error: "❌",
+                    warning: "⚠️",
+                    info: "ℹ️"
+                };
+
+                icon.textContent = icons[type] || icons.info;
+                titleElement.textContent = title;
+                messageElement.textContent = message;
+
+                // 타입에 따른 스타일 적용
+                const content = modal.querySelector(".notification-content");
+                content.style.borderLeft = `4px solid ${
+                    type === "success" ? "#000000" :
+                    type === "error" ? "#000000" :
+                    type === "warning" ? "#000000" :
+                    "#000000"
+                }`;
+
+                modal.style.display = "block";
+
+                // 자동 닫기 설정
+                if (autoClose) {
+                    setTimeout(() => {
+                        closeNotification();
+                    }, 10000);
+                }
+            }
+
+            // 알림 닫기
+            function closeNotification() {
+                const modal = document.getElementById("notificationModal");
+                modal.style.display = "none";
+            }
+
+            // 메시지 표시 (기존 함수 유지, 호환성 위해)
+            function showMessage(text, type, elementId = null) {
+                if (!elementId) {
+                    // 중앙 알림으로 표시
+                    const titles = {
+                        success: "성공",
+                        error: "오류",
+                        warning: "경고",
+                        info: "알림"
+                    };
+                    showNotification(titles[type] || "알림", text, type);
+                } else {
+                    // 기존 방식으로 표시 (로그인 메시지 등)
+                    const messageDiv = document.getElementById(elementId);
+                    messageDiv.className = `message ${type}`;
+                    messageDiv.textContent = text;
+                }
+            }
+
+            // 주문 내역 아코디언 토글
+            function toggleOrderHistory() {
+                const content = document.getElementById("orderHistoryContent");
+                const icon = document.getElementById("orderHistoryIcon");
+
+                if (content.style.display === "none") {
+                    content.style.display = "block";
+                    icon.textContent = "▲";
+                    icon.style.transform = "rotate(180deg)";
+                } else {
+                    content.style.display = "none";
+                    icon.textContent = "▼";
+                    icon.style.transform = "rotate(0deg)";
+                }
+            }
+
+            // ===== 이미지 관리 함수들 =====
+
+            // 상품 이미지 설정
+            function setProductImage(productId, imageUrl) {
+                const product = products.find(p => p.id === productId);
+                if (product) {
+                    product.image = imageUrl;
+                    renderProducts(); // 상품 목록 다시 렌더링
+                }
+            }
+
+            // 상품 이미지 제거
+            function removeProductImage(productId) {
+                const product = products.find(p => p.id === productId);
+                if (product) {
+                    product.image = null;
+                    renderProducts(); // 상품 목록 다시 렌더링
+                }
+            }
+
+            // 모든 상품 이미지 일괄 설정 (예시)
+            function setAllProductImages(imageUrls) {
+                // imageUrls는 {productId: imageUrl} 형태의 객체
+                Object.keys(imageUrls).forEach(productId => {
+                    setProductImage(parseInt(productId), imageUrls[productId]);
+                });
+            }
+
+            // 이미지 URL 유효성 검사
+            function isValidImageUrl(url) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => resolve(true);
+                    img.onerror = () => resolve(false);
+                    img.src = url;
+                });
+            }
+
+            // 이미지 미리보기 (관리자용)
+            function previewProductImage(productId, imageUrl) {
+                const product = products.find(p => p.id === productId);
+                if (product) {
+                    // 임시로 이미지 설정하여 미리보기
+                    const originalImage = product.image;
+                    product.image = imageUrl;
+                    renderProducts();
+                    
+                    // 3초 후 원래 상태로 복원
+                    setTimeout(() => {
+                        product.image = originalImage;
+                        renderProducts();
+                    }, 3000);
+                }
+            }
+
+            // ===== 이미지 추가 예시 =====
+            /*
+            // 개별 상품 이미지 추가
+            setProductImage(1, "images/baby-clothes.jpg");
+            setProductImage(2, "images/swaddle.jpg");
+            setProductImage(3, "images/handkerchief.jpg");
+
+            // 일괄 이미지 추가
+            const imageUrls = {
+                1: "images/baby-clothes.jpg",
+                2: "images/swaddle.jpg",
+                3: "images/handkerchief.jpg",
+                4: "images/printed-handkerchief.jpg",
+                5: "images/smart-set.jpg",
+                6: "images/swaddle-blanket.jpg",
+                7: "images/blanket.jpg",
+                8: "images/huggies-diaper.jpg",
+                9: "images/namecard-pink.jpg",
+                10: "images/namecard-blue.jpg",
+                11: "images/mother-bracelet.jpg",
+                12: "images/baby-bracelet-pink.jpg",
+                13: "images/baby-bracelet-blue.jpg",
+                14: "images/vegemil-soy-milk.jpg"
+            };
+            setAllProductImages(imageUrls);
+
+            // 이미지 URL 유효성 검사 후 추가
+            isValidImageUrl("images/baby-clothes.jpg").then(isValid => {
+                if (isValid) {
+                    setProductImage(1, "images/baby-clothes.jpg");
+                }
+            });
+            */
+        </script>
+    </body>
+</html>
