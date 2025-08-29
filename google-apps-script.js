@@ -8,6 +8,7 @@
  * - 예산 관리 (3열 기본, 4열 마스터 금액)
  * - 주문 처리 및 내역 저장
  * - 자동 월 초기화 (매월 1일)
+ * - 자동 데이터 정리 (1주일이 지난 주문 데이터 자동 삭제)
  * - CORS 헤더 지원
  * - JSONP 지원
  * - 에러 처리 및 보안
@@ -17,6 +18,7 @@
  * 2. SPREADSHEET_ID를 실제 스프레드시트 ID로 변경
  * 3. 웹 앱으로 배포
  * 4. 배포 URL을 HTML에서 사용
+ * 5. setupDataCleanupTrigger() 함수를 한 번 실행하여 자동 정리 트리거 설정
  * 
  * 💡 핵심 기능:
  * 
@@ -38,14 +40,19 @@
  * - 매월 1일 4열 자동 삭제
  * - 3열 기준으로 복귀
  * 
+ * 🧹 자동 데이터 정리:
+ * - 1주일이 지난 주문 데이터 자동 삭제
+ * - 매일 오전 2시에 실행 (트리거 설정 필요)
+ * 
  * 🚀 배포 가이드:
  * 1. 이 코드를 Google Apps Script에 복사
  * 2. SPREADSHEET_ID를 실제 스프레드시트 ID로 변경
  * 3. testSystem() 함수 실행하여 테스트
- * 4. "배포" > "새 배포" > "웹 앱" 선택
- * 5. "액세스 권한" > "모든 사용자" 선택
- * 6. "배포" 클릭
- * 7. 생성된 URL을 HTML 파일에서 사용
+ * 4. setupDataCleanupTrigger() 함수 실행하여 자동 정리 트리거 설정
+ * 5. "배포" > "새 배포" > "웹 앱" 선택
+ * 6. "액세스 권한" > "모든 사용자" 선택
+ * 7. "배포" 클릭
+ * 8. 생성된 URL을 HTML 파일에서 사용
  */
 
 // ⚠️ 중요: 실제 Google Sheets ID로 변경해야 합니다!
@@ -691,6 +698,111 @@ function generateOrderId() {
 }
 
 /**
+ * 1주일이 지난 주문 데이터를 자동으로 삭제하는 함수
+ * 이 함수는 매일 자동으로 실행됩니다 (트리거 설정 필요)
+ */
+function cleanupOldOrders() {
+  try {
+    const orderSheet = getOrderSheet();
+    const lastRow = orderSheet.getLastRow();
+
+    if (lastRow < 2) {
+      console.log("삭제할 데이터가 없습니다.");
+      return;
+    }
+
+    // 1주일 전 날짜 계산 (한국 시간 기준)
+    const now = getKoreanTime();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    oneWeekAgo.setHours(0, 0, 0, 0);
+
+    console.log(
+      `데이터 정리 시작: ${oneWeekAgo.toLocaleString(
+        "ko-KR"
+      )} 이전 데이터 삭제`
+    );
+
+    // 성능 최적화: 한 번에 모든 데이터 가져오기
+    const range = orderSheet.getRange(2, 1, lastRow - 1, 11);
+    const values = range.getValues();
+
+    // 삭제할 행 번호들을 역순으로 저장 (아래에서부터 삭제해야 인덱스가 꼬이지 않음)
+    const rowsToDelete = [];
+
+    for (let i = 0; i < values.length; i++) {
+      const row = values[i];
+      const orderTime = row[7] ? new Date(row[7]) : null; // 8열: 날짜
+
+      // 1주일이 지난 주문 데이터 찾기
+      if (orderTime && orderTime < oneWeekAgo) {
+        rowsToDelete.push(i + 2); // 실제 행 번호 (헤더 제외)
+      }
+    }
+
+    // 역순으로 정렬 (아래에서부터 삭제)
+    rowsToDelete.sort((a, b) => b - a);
+
+    if (rowsToDelete.length === 0) {
+      console.log("삭제할 데이터가 없습니다.");
+      return;
+    }
+
+    // 삭제할 행들을 한 번에 삭제
+    for (const rowNum of rowsToDelete) {
+      orderSheet.deleteRow(rowNum);
+    }
+
+    console.log(
+      `${rowsToDelete.length}개의 오래된 주문 데이터가 삭제되었습니다.`
+    );
+
+    // 변경사항 저장
+    SpreadsheetApp.flush();
+  } catch (error) {
+    console.error("데이터 정리 중 오류 발생:", error);
+  }
+}
+
+/**
+ * 자동 데이터 정리 트리거를 설정하는 함수
+ * 이 함수는 한 번만 실행하면 됩니다.
+ */
+function setupDataCleanupTrigger() {
+  try {
+    // 기존 트리거 삭제
+    const triggers = ScriptApp.getProjectTriggers();
+    for (const trigger of triggers) {
+      if (trigger.getHandlerFunction() === "cleanupOldOrders") {
+        ScriptApp.deleteTrigger(trigger);
+        console.log("기존 데이터 정리 트리거가 삭제되었습니다.");
+      }
+    }
+
+    // 새로운 트리거 생성 (매일 오전 2시에 실행)
+    ScriptApp.newTrigger("cleanupOldOrders")
+      .timeBased()
+      .everyDays(1)
+      .atHour(2)
+      .create();
+
+    console.log(
+      "데이터 정리 트리거가 설정되었습니다. (매일 오전 2시 실행)"
+    );
+  } catch (error) {
+    console.error("트리거 설정 중 오류 발생:", error);
+  }
+}
+
+/**
+ * 수동으로 데이터 정리를 실행하는 함수 (테스트용)
+ */
+function manualCleanup() {
+  console.log("수동 데이터 정리 시작...");
+  cleanupOldOrders();
+  console.log("수동 데이터 정리 완료");
+}
+
+/**
  * 시스템 테스트 함수
  */
 function testSystem() {
@@ -738,10 +850,11 @@ function testSystem() {
  * 1. 이 코드를 Google Apps Script에 복사
  * 2. SPREADSHEET_ID를 실제 스프레드시트 ID로 변경
  * 3. testSystem() 함수 실행하여 테스트
- * 4. "배포" > "새 배포" > "웹 앱" 선택
- * 5. "액세스 권한" > "모든 사용자" 선택
- * 6. "배포" 클릭
- * 7. 생성된 URL을 HTML 파일에서 사용
+ * 4. setupDataCleanupTrigger() 함수 실행하여 자동 정리 트리거 설정
+ * 5. "배포" > "새 배포" > "웹 앱" 선택
+ * 6. "액세스 권한" > "모든 사용자" 선택
+ * 7. "배포" 클릭
+ * 8. 생성된 URL을 HTML 파일에서 사용
  * 
  * ⚠️ 중요: 배포 후 URL을 HTML의 API_URL에 설정해야 합니다!
  */

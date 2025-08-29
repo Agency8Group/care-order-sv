@@ -4,7 +4,7 @@
     
     // API 엔드포인트 설정
     const API_CONFIG = {
-        endpoint: 'https://script.google.com/macros/s/AKfycbznLcEt0igtQUd0v2iWlvyx6OUrSVj88xRltwE_Ez1UsMDajqeJvsePGjg8rw-gE3IJ/exec',
+        endpoint: 'https://script.google.com/macros/s/AKfycbwCY2vPpopG8AXiIvo7ui4CdHlU8IsqL6-Hp7gO1I0QB6ubwLpUaxkOkvwkHmhDUf6v/exec',
         timeout: 30000,
         retries: 3
     };
