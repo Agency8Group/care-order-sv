@@ -8,7 +8,7 @@
  * - 예산 관리 (3열 기본, 4열 마스터 금액)
  * - 주문 처리 및 내역 저장
  * - 자동 월 초기화 (매월 1일)
- * - 자동 데이터 정리 (1주일이 지난 주문 데이터 자동 삭제)
+ * - 자동 데이터 정리 (1달이 지난 주문 데이터 자동 삭제)
  * - CORS 헤더 지원
  * - JSONP 지원
  * - 에러 처리 및 보안
@@ -41,8 +41,8 @@
  * - 3열 기준으로 복귀
  * 
  * 🧹 자동 데이터 정리:
- * - 1주일이 지난 주문 데이터 자동 삭제
- * - 매일 오전 2시에 실행 (트리거 설정 필요)
+ * - 1달이 지난 주문 데이터 자동 삭제
+ * - 매월 1일 오전 2시에 실행 (트리거 설정 필요)
  * 
  * 🚀 배포 가이드:
  * 1. 이 코드를 Google Apps Script에 복사
@@ -698,8 +698,8 @@ function generateOrderId() {
 }
 
 /**
- * 1주일이 지난 주문 데이터를 자동으로 삭제하는 함수
- * 이 함수는 매일 자동으로 실행됩니다 (트리거 설정 필요)
+ * 1달이 지난 주문 데이터를 자동으로 삭제하는 함수
+ * 이 함수는 매월 1일 자동으로 실행됩니다 (트리거 설정 필요)
  */
 function cleanupOldOrders() {
   try {
@@ -711,13 +711,13 @@ function cleanupOldOrders() {
       return;
     }
 
-    // 1주일 전 날짜 계산 (한국 시간 기준)
+    // 1달(30일) 전 날짜 계산 (한국 시간 기준)
     const now = getKoreanTime();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    oneWeekAgo.setHours(0, 0, 0, 0);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    oneMonthAgo.setHours(0, 0, 0, 0);
 
     console.log(
-      `데이터 정리 시작: ${oneWeekAgo.toLocaleString(
+      `데이터 정리 시작: ${oneMonthAgo.toLocaleString(
         "ko-KR"
       )} 이전 데이터 삭제`
     );
@@ -733,8 +733,8 @@ function cleanupOldOrders() {
       const row = values[i];
       const orderTime = row[7] ? new Date(row[7]) : null; // 8열: 날짜
 
-      // 1주일이 지난 주문 데이터 찾기
-      if (orderTime && orderTime < oneWeekAgo) {
+      // 1달이 지난 주문 데이터 찾기
+      if (orderTime && orderTime < oneMonthAgo) {
         rowsToDelete.push(i + 2); // 실제 행 번호 (헤더 제외)
       }
     }
@@ -778,15 +778,15 @@ function setupDataCleanupTrigger() {
       }
     }
 
-    // 새로운 트리거 생성 (매일 오전 2시에 실행)
+    // 새로운 트리거 생성 (매월 1일 오전 2시에 실행)
     ScriptApp.newTrigger("cleanupOldOrders")
       .timeBased()
-      .everyDays(1)
+      .onMonthDay(1)
       .atHour(2)
       .create();
 
     console.log(
-      "데이터 정리 트리거가 설정되었습니다. (매일 오전 2시 실행)"
+      "데이터 정리 트리거가 설정되었습니다. (매월 1일 오전 2시 실행)"
     );
   } catch (error) {
     console.error("트리거 설정 중 오류 발생:", error);
