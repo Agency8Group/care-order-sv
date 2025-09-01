@@ -992,6 +992,9 @@
                     </button>
                 </form>
                 <div id="loginMessage"></div>
+                <div id="securityStatus" style="margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 12px; text-align: center; color: #666; display: none;">
+                    <!-- 보안 상태가 여기에 표시됩니다 -->
+                </div>
             </div>
 
             <!-- 메인 주문 섹션 (로그인 후 표시) -->
@@ -1340,8 +1343,6 @@
                 const userId = document.getElementById("userId").value.trim();
                 const pin = document.getElementById("pin").value.trim();
 
-                console.log("로그인 시도:", { userId, pin });
-
                 if (!userId || !pin) {
                     showMessage(
                         "조리원 ID와 PIN 번호를 입력해주세요.",
@@ -1366,17 +1367,12 @@
                         pin: pin,
                     };
 
-                    console.log("API 요청 데이터:", requestData);
-
                     // 단계 2: 서버 처리
                     updateProgress(30, "서버에서 인증 처리 중...");
                     nextStep();
                     await simulateApiDelay(500, 1000);
 
                     const result = await apiCall('login', requestData);
-
-                    console.log("API 응답 결과:", result);
-                    console.log("응답 상세:", JSON.stringify(result, null, 2));
 
                     // 단계 3: 데이터 저장
                     updateProgress(70, "사용자 정보 로드 중...");
@@ -1397,6 +1393,13 @@
                         showMessage("로그인 성공!", "success", "loginMessage");
                     } else {
                         showMessage(result.message, "error", "loginMessage");
+                        
+                        // 보안 상태 표시 (로그인 실패 시)
+                        if (result.message.includes("남은 시도 횟수")) {
+                            showSecurityStatus(result.message, "warning");
+                        } else if (result.message.includes("계정이 잠겼습니다")) {
+                            showSecurityStatus(result.message, "error");
+                        }
                     }
                 } catch (error) {
                     console.error("로그인 오류:", error);
@@ -1434,6 +1437,34 @@
                 document.querySelector('.container').classList.add('login-mode');
                 document.getElementById("userId").value = "";
                 document.getElementById("pin").value = "";
+                
+                // 보안 상태 초기화
+                hideSecurityStatus();
+            }
+            
+            // 보안 상태 표시
+            function showSecurityStatus(message, type = "info") {
+                const securityStatus = document.getElementById("securityStatus");
+                if (securityStatus) {
+                    securityStatus.textContent = message;
+                    securityStatus.style.display = "block";
+                    
+                    // 타입에 따른 스타일 적용
+                    securityStatus.style.backgroundColor = type === "warning" ? "#fff3cd" : 
+                                                       type === "error" ? "#f8d7da" : "#d1ecf1";
+                    securityStatus.style.color = type === "warning" ? "#856404" : 
+                                              type === "error" ? "#721c24" : "#0c5460";
+                    securityStatus.style.border = `1px solid ${type === "warning" ? "#ffeaa7" : 
+                                                           type === "error" ? "#f5c6cb" : "#bee5eb"}`;
+                }
+            }
+            
+            // 보안 상태 숨기기
+            function hideSecurityStatus() {
+                const securityStatus = document.getElementById("securityStatus");
+                if (securityStatus) {
+                    securityStatus.style.display = "none";
+                }
             }
 
             // 예산 정보 업데이트

@@ -114,7 +114,7 @@ function doGet(e) {
       // 액션별 처리
       if (action === "login") {
         try {
-          const result = authenticateUser(data);
+          const result = authenticateUserSecure(data);
           response = {
             status: "success",
             ...result
@@ -162,6 +162,32 @@ function doGet(e) {
           response = {
             status: "error",
             message: "예산 정보 조회 실패: " + error.message
+          };
+        }
+      } else if (action === "securityStatus") {
+        try {
+          const result = getSecurityStatus();
+          response = {
+            status: "success",
+            ...result
+          };
+        } catch (error) {
+          response = {
+            status: "error",
+            message: "보안 상태 조회 실패: " + error.message
+          };
+        }
+      } else if (action === "resetLoginAttempts") {
+        try {
+          const result = resetLoginAttempts(data.userId || null);
+          response = {
+            status: "success",
+            ...result
+          };
+        } catch (error) {
+          response = {
+            status: "error",
+            message: "로그인 시도 기록 초기화 실패: " + error.message
           };
         }
       }
@@ -265,16 +291,11 @@ function authenticateUser(data) {
     // 사용자 시트 가져오기
     const userSheet = getUserSheet();
     const userData = userSheet.getDataRange().getValues();
-    
-    console.log("🔍 디버깅 - 전체 사용자 데이터:", userData);
-    console.log("🔍 디버깅 - 찾는 사용자:", { userId, pin });
 
     // 사용자 찾기 (1열: 조리원ID, 2열: PIN)
     let user = null;
     for (let i = 1; i < userData.length; i++) { // 1부터 시작 (헤더 있음)
-      console.log(`🔍 디버깅 - ${i}행 데이터:`, userData[i]);
       if (userData[i][0] === userId && String(userData[i][1]) === pin) {
-        console.log("✅ 사용자 찾음!");
         user = {
           userId: userData[i][0],
           pin: userData[i][1],
@@ -289,18 +310,8 @@ function authenticateUser(data) {
     }
 
     if (!user) {
-      // 디버깅 정보를 포함한 오류 메시지
-      const debugInfo = {
-        searchedUserId: userId,
-        searchedPin: pin,
-        totalRows: userData.length,
-        availableUsers: userData.slice(1).map(row => ({
-          userId: row[0],
-          pin: row[1],
-          budget: row[2]
-        }))
-      };
-      throw new Error(`조리원 ID 또는 PIN이 올바르지 않습니다. (디버그: ${JSON.stringify(debugInfo)})`);
+      // 보안 강화: 민감한 정보 노출 방지
+      throw new Error("조리원 ID 또는 PIN이 올바르지 않습니다.");
     }
 
     // 현재 예산 정보 계산
@@ -826,7 +837,7 @@ function testSystem() {
     console.log("✅ 테스트 사용자 추가 성공");
 
     // 인증 테스트
-    const authResult = authenticateUser({
+    const authResult = authenticateUserSecure({
       userId: "테스트조리원",
       pin: "1234"
     });
@@ -858,3 +869,214 @@ function testSystem() {
  * 
  * ⚠️ 중요: 배포 후 URL을 HTML의 API_URL에 설정해야 합니다!
  */
+
+/**
+ * 🔒 보안 강화: 로그인 시도 제한 및 계정 잠금 기능
+ */
+
+// 로그인 시도 기록을 저장할 PropertiesService 키
+const LOGIN_ATTEMPTS_KEY = "login_attempts";
+const ACCOUNT_LOCKOUT_KEY = "account_lockout";
+const MAX_LOGIN_ATTEMPTS = 5; // 최대 로그인 시도 횟수
+const LOCKOUT_DURATION = 30; // 계정 잠금 시간 (분)
+
+/**
+ * 로그인 시도 기록을 가져오는 함수
+ */
+function getLoginAttempts(userId) {
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const attemptsData = properties.getProperty(LOGIN_ATTEMPTS_KEY);
+    
+    if (!attemptsData) return {};
+    
+    const attempts = JSON.parse(attemptsData);
+    return attempts[userId] || { count: 0, lastAttempt: null, lockedUntil: null };
+  } catch (error) {
+    console.error("로그인 시도 기록 조회 오류:", error);
+    return { count: 0, lastAttempt: null, lockedUntil: null };
+  }
+}
+
+/**
+ * 로그인 시도 기록을 저장하는 함수
+ */
+function saveLoginAttempts(userId, success) {
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const attemptsData = properties.getProperty(LOGIN_ATTEMPTS_KEY);
+    let attempts = {};
+    
+    if (attemptsData) {
+      attempts = JSON.parse(attemptsData);
+    }
+    
+    const now = new Date().getTime();
+    
+    if (!attempts[userId]) {
+      attempts[userId] = { count: 0, lastAttempt: null, lockedUntil: null };
+    }
+    
+    if (success) {
+      // 로그인 성공 시 시도 횟수 초기화
+      attempts[userId] = { count: 0, lastAttempt: now, lockedUntil: null };
+    } else {
+      // 로그인 실패 시 시도 횟수 증가
+      attempts[userId].count += 1;
+      attempts[userId].lastAttempt = now;
+      
+      // 최대 시도 횟수 초과 시 계정 잠금
+      if (attempts[userId].count >= MAX_LOGIN_ATTEMPTS) {
+        const lockoutUntil = now + (LOCKOUT_DURATION * 60 * 1000); // 30분 후
+        attempts[userId].lockedUntil = lockoutUntil;
+        
+        // 계정 잠금 로그 기록
+        console.log(`🔒 계정 잠금: ${userId} - ${MAX_LOGIN_ATTEMPTS}회 실패로 인한 잠금`);
+      }
+    }
+    
+    properties.setProperty(LOGIN_ATTEMPTS_KEY, JSON.stringify(attempts));
+  } catch (error) {
+    console.error("로그인 시도 기록 저장 오류:", error);
+  }
+}
+
+/**
+ * 계정 잠금 상태를 확인하는 함수
+ */
+function isAccountLocked(userId) {
+  try {
+    const attempts = getLoginAttempts(userId);
+    
+    if (attempts.lockedUntil && attempts.lockedUntil > new Date().getTime()) {
+      const remainingMinutes = Math.ceil((attempts.lockedUntil - new Date().getTime()) / (60 * 1000));
+      return {
+        locked: true,
+        remainingMinutes: remainingMinutes,
+        message: `계정이 잠겼습니다. ${remainingMinutes}분 후에 다시 시도해주세요.`
+      };
+    }
+    
+    return { locked: false, remainingMinutes: 0, message: "" };
+  } catch (error) {
+    console.error("계정 잠금 상태 확인 오류:", error);
+    return { locked: false, remainingMinutes: 0, message: "" };
+  }
+}
+
+/**
+ * 보안 강화된 사용자 인증 함수
+ */
+function authenticateUserSecure(data) {
+  try {
+    // 데이터 검증
+    if (!data.userId || !data.userId.trim()) {
+      throw new Error("조리원 ID가 필요합니다.");
+    }
+
+    if (!data.pin || !data.pin.trim()) {
+      throw new Error("PIN 번호가 필요합니다.");
+    }
+
+    const userId = data.userId.trim();
+    const pin = data.pin.trim();
+
+    // 계정 잠금 상태 확인
+    const lockStatus = isAccountLocked(userId);
+    if (lockStatus.locked) {
+      throw new Error(lockStatus.message);
+    }
+
+    // 사용자 인증 시도
+    const user = authenticateUser(data);
+    
+    if (user && user.user) {
+      // 로그인 성공 시 시도 기록 초기화
+      saveLoginAttempts(userId, true);
+      return user;
+    } else {
+      // 로그인 실패 시 시도 기록 저장
+      saveLoginAttempts(userId, false);
+      
+      // 잠금 상태 재확인
+      const newLockStatus = isAccountLocked(userId);
+      if (newLockStatus.locked) {
+        throw new Error(newLockStatus.message);
+      } else {
+        const attempts = getLoginAttempts(userId);
+        const remainingAttempts = MAX_LOGIN_ATTEMPTS - attempts.count;
+        throw new Error(`조리원 ID 또는 PIN이 올바르지 않습니다. (남은 시도 횟수: ${remainingAttempts}회)`);
+      }
+    }
+  } catch (error) {
+    console.error("보안 인증 오류:", error);
+    throw error;
+  }
+}
+
+/**
+ * 로그인 시도 기록을 초기화하는 함수 (관리자용)
+ */
+function resetLoginAttempts(userId = null) {
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    
+    if (userId) {
+      // 특정 사용자의 시도 기록만 초기화
+      const attemptsData = properties.getProperty(LOGIN_ATTEMPTS_KEY);
+      if (attemptsData) {
+        const attempts = JSON.parse(attemptsData);
+        if (attempts[userId]) {
+          attempts[userId] = { count: 0, lastAttempt: null, lockedUntil: null };
+          properties.setProperty(LOGIN_ATTEMPTS_KEY, JSON.stringify(attempts));
+          console.log(`✅ ${userId} 사용자의 로그인 시도 기록이 초기화되었습니다.`);
+        }
+      }
+    } else {
+      // 모든 사용자의 시도 기록 초기화
+      properties.deleteProperty(LOGIN_ATTEMPTS_KEY);
+      console.log("✅ 모든 사용자의 로그인 시도 기록이 초기화되었습니다.");
+    }
+    
+    return { status: "success", message: "로그인 시도 기록이 초기화되었습니다." };
+  } catch (error) {
+    console.error("로그인 시도 기록 초기화 오류:", error);
+    return { status: "error", message: error.message };
+  }
+}
+
+/**
+ * 보안 상태를 확인하는 함수
+ */
+function getSecurityStatus() {
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const attemptsData = properties.getProperty(LOGIN_ATTEMPTS_KEY);
+    
+    if (!attemptsData) {
+      return { status: "success", message: "보안 상태: 정상", lockedAccounts: 0, totalAttempts: 0 };
+    }
+    
+    const attempts = JSON.parse(attemptsData);
+    let lockedAccounts = 0;
+    let totalAttempts = 0;
+    
+    for (const userId in attempts) {
+      totalAttempts += attempts[userId].count;
+      if (attempts[userId].lockedUntil && attempts[userId].lockedUntil > new Date().getTime()) {
+        lockedAccounts++;
+      }
+    }
+    
+    return {
+      status: "success",
+      message: "보안 상태 조회 완료",
+      lockedAccounts: lockedAccounts,
+      totalAttempts: totalAttempts,
+      totalUsers: Object.keys(attempts).length
+    };
+  } catch (error) {
+    console.error("보안 상태 조회 오류:", error);
+    return { status: "error", message: error.message };
+  }
+}
