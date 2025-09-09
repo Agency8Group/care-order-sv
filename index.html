@@ -316,6 +316,200 @@
                 }
             }
 
+            /* 공지사항 모달 스타일 */
+            .notice-modal {
+                display: none;
+                position: fixed;
+                z-index: 3000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.6);
+                animation: fadeIn 0.3s ease;
+            }
+
+            .notice-content {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                border-radius: 16px;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15), 0 15px 35px rgba(0, 0, 0, 0.1);
+                min-width: 500px;
+                max-width: 600px;
+                max-height: 80vh;
+                overflow: hidden;
+                animation: slideIn 0.3s ease;
+                border: 1px solid #e5e5e5;
+            }
+
+            .notice-header {
+                background: linear-gradient(135deg, #000000 0%, #333333 100%);
+                color: white;
+                padding: 20px 24px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #e5e5e5;
+            }
+
+            .notice-header h2 {
+                margin: 0;
+                font-size: 1.25rem;
+                font-weight: 600;
+                letter-spacing: -0.025em;
+            }
+
+            .notice-close {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+                cursor: pointer;
+                padding: 0;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: all 0.2s ease;
+            }
+
+            .notice-close:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: scale(1.1);
+            }
+
+            .notice-body {
+                padding: 24px;
+                max-height: 50vh;
+                overflow-y: auto;
+            }
+
+            .notice-date {
+                color: #666666;
+                font-size: 0.875rem;
+                margin-bottom: 8px;
+                font-weight: 500;
+            }
+
+            .notice-title {
+                color: #000000;
+                font-size: 1.125rem;
+                font-weight: 600;
+                margin-bottom: 16px;
+                line-height: 1.4;
+            }
+
+            .notice-message {
+                color: #333333;
+                line-height: 1.6;
+                font-size: 0.95rem;
+            }
+
+            .notice-message p {
+                margin-bottom: 12px;
+            }
+
+            .notice-message ul {
+                margin: 12px 0;
+                padding-left: 20px;
+            }
+
+            .notice-message li {
+                margin-bottom: 6px;
+            }
+
+            .notice-message strong {
+                color: #000000;
+                font-weight: 600;
+            }
+
+            .notice-footer {
+                padding: 16px 24px;
+                background: #f8f8f8;
+                border-top: 1px solid #e5e5e5;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .notice-checkbox {
+                display: flex;
+                align-items: center;
+                font-size: 0.875rem;
+                color: #666666;
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .notice-checkbox input[type="checkbox"] {
+                margin-right: 8px;
+                width: 16px;
+                height: 16px;
+                accent-color: #000000;
+            }
+
+            .notice-confirm {
+                background: #000000;
+                color: white;
+                border: none;
+                padding: 10px 24px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                min-width: 80px;
+            }
+
+            .notice-confirm:hover {
+                background: #333333;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            }
+
+            /* 모바일 반응형 */
+            @media (max-width: 768px) {
+                .notice-content {
+                    min-width: 90%;
+                    max-width: 95%;
+                    margin: 20px;
+                }
+
+                .notice-header {
+                    padding: 16px 20px;
+                }
+
+                .notice-header h2 {
+                    font-size: 1.125rem;
+                }
+
+                .notice-body {
+                    padding: 20px;
+                    max-height: 60vh;
+                }
+
+                .notice-footer {
+                    padding: 12px 20px;
+                    flex-direction: column;
+                    gap: 12px;
+                    align-items: stretch;
+                }
+
+                .notice-checkbox {
+                    justify-content: center;
+                }
+
+                .notice-confirm {
+                    width: 100%;
+                }
+            }
+
             .budget-info {
                 background: #000000;
                 color: white;
@@ -956,6 +1150,43 @@
             </div>
         </div>
 
+        <!-- 공지사항 모달 -->
+        <div id="noticeModal" class="notice-modal">
+            <div class="notice-content">
+                <div class="notice-header">
+                    <h2>📢 공지사항</h2>
+                    <button class="notice-close" onclick="closeNoticeModal()">×</button>
+                </div>
+                <div class="notice-body">
+                    <div class="notice-date" id="noticeDate">2024년 1월 15일</div>
+                    <div class="notice-title" id="noticeTitle">시스템 업데이트 안내</div>
+                    <div class="notice-message" id="noticeMessage">
+                        <p>안녕하세요. 조리원 주문 시스템을 이용해 주셔서 감사합니다.</p>
+                        <p><strong>주요 업데이트 내용:</strong></p>
+                        <ul>
+                            <li>새로운 상품 추가 (베지밀 달콤한 비 두유)</li>
+                            <li>예산 관리 기능 개선</li>
+                            <li>주문 내역 조회 기능 강화</li>
+                            <li>보안 기능 강화</li>
+                        </ul>
+                        <p><strong>이용 시 주의사항:</strong></p>
+                        <ul>
+                            <li>주문 전 예산을 확인해 주세요</li>
+                            <li>배송 정보를 정확히 입력해 주세요</li>
+                            <li>문의사항이 있으시면 관리자에게 연락해 주세요</li>
+                        </ul>
+                        <p>앞으로도 더 나은 서비스로 보답하겠습니다.</p>
+                    </div>
+                </div>
+                <div class="notice-footer">
+                    <label class="notice-checkbox">
+                        <input type="checkbox" id="dontShowAgain"> 오늘 하루 보지 않기
+                    </label>
+                    <button class="notice-confirm" onclick="closeNoticeModal()">확인</button>
+                </div>
+            </div>
+        </div>
+
         <div class="container">
             <!-- 헤더 -->
             <div class="header">
@@ -1192,6 +1423,8 @@
                 renderProducts();
                 // 초기 로그인 모드 설정
                 document.querySelector('.container').classList.add('login-mode');
+                // 공지사항 모달 표시 (로그인 화면에서만)
+                showNoticeModalIfNeeded();
             });
 
             // ===== 로딩 상태 관리 함수들 =====
@@ -1918,6 +2151,148 @@
                     icon.textContent = "▼";
                     icon.style.transform = "rotate(0deg)";
                 }
+            }
+
+            // ===== 공지사항 모달 관리 함수들 =====
+
+            // 공지사항 설정 (관리자가 수정 가능)
+            const noticeConfig = {
+                date: "2024년 1월 15일",
+                title: "시스템 업데이트 안내",
+                message: `
+                    <p>안녕하세요. 조리원 주문 시스템을 이용해 주셔서 감사합니다.</p>
+                    <p><strong>주요 업데이트 내용:</strong></p>
+                    <ul>
+                        <li>새로운 상품 추가 (베지밀 달콤한 비 두유)</li>
+                        <li>예산 관리 기능 개선</li>
+                        <li>주문 내역 조회 기능 강화</li>
+                        <li>보안 기능 강화</li>
+                    </ul>
+                    <p><strong>이용 시 주의사항:</strong></p>
+                    <ul>
+                        <li>주문 전 예산을 확인해 주세요</li>
+                        <li>배송 정보를 정확히 입력해 주세요</li>
+                        <li>문의사항이 있으시면 관리자에게 연락해 주세요</li>
+                    </ul>
+                    <p>앞으로도 더 나은 서비스로 보답하겠습니다.</p>
+                `,
+                enabled: true // 공지사항 표시 여부 (관리자가 제어)
+            };
+
+            // 공지사항 모달 표시 여부 확인
+            function showNoticeModalIfNeeded() {
+                // 공지사항이 비활성화되어 있으면 표시하지 않음
+                if (!noticeConfig.enabled) {
+                    return;
+                }
+
+                // 로그인 화면이 아닌 경우 표시하지 않음
+                if (!document.querySelector('.container').classList.contains('login-mode')) {
+                    return;
+                }
+
+                // 오늘 하루 보지 않기 체크 확인
+                const today = new Date().toDateString();
+                const dontShowToday = localStorage.getItem('noticeDontShowToday');
+                
+                if (dontShowToday === today) {
+                    return;
+                }
+
+                // 공지사항 모달 표시
+                showNoticeModal();
+            }
+
+            // 공지사항 모달 표시
+            function showNoticeModal() {
+                const modal = document.getElementById('noticeModal');
+                const dateElement = document.getElementById('noticeDate');
+                const titleElement = document.getElementById('noticeTitle');
+                const messageElement = document.getElementById('noticeMessage');
+                const checkbox = document.getElementById('dontShowAgain');
+
+                // 공지사항 내용 설정
+                dateElement.textContent = noticeConfig.date;
+                titleElement.textContent = noticeConfig.title;
+                messageElement.innerHTML = noticeConfig.message;
+                
+                // 체크박스 초기화
+                checkbox.checked = false;
+
+                // 모달 표시
+                modal.style.display = 'block';
+                
+                // ESC 키로 닫기 이벤트 추가
+                document.addEventListener('keydown', handleNoticeModalKeydown);
+                
+                // 모달 외부 클릭으로 닫기 이벤트 추가
+                modal.addEventListener('click', handleNoticeModalClick);
+            }
+
+            // 공지사항 모달 닫기
+            function closeNoticeModal() {
+                const modal = document.getElementById('noticeModal');
+                const checkbox = document.getElementById('dontShowAgain');
+                
+                // 오늘 하루 보지 않기 체크 시 로컬스토리지에 저장
+                if (checkbox.checked) {
+                    const today = new Date().toDateString();
+                    localStorage.setItem('noticeDontShowToday', today);
+                }
+
+                // 모달 숨기기
+                modal.style.display = 'none';
+                
+                // 이벤트 리스너 제거
+                document.removeEventListener('keydown', handleNoticeModalKeydown);
+                modal.removeEventListener('click', handleNoticeModalClick);
+            }
+
+            // 공지사항 모달 키보드 이벤트 처리
+            function handleNoticeModalKeydown(event) {
+                if (event.key === 'Escape') {
+                    closeNoticeModal();
+                }
+            }
+
+            // 공지사항 모달 클릭 이벤트 처리
+            function handleNoticeModalClick(event) {
+                if (event.target === event.currentTarget) {
+                    closeNoticeModal();
+                }
+            }
+
+            // 공지사항 설정 업데이트 (관리자용)
+            function updateNoticeConfig(newConfig) {
+                Object.assign(noticeConfig, newConfig);
+                
+                // 현재 모달이 표시 중이면 내용 업데이트
+                const modal = document.getElementById('noticeModal');
+                if (modal.style.display === 'block') {
+                    const dateElement = document.getElementById('noticeDate');
+                    const titleElement = document.getElementById('noticeTitle');
+                    const messageElement = document.getElementById('noticeMessage');
+                    
+                    dateElement.textContent = noticeConfig.date;
+                    titleElement.textContent = noticeConfig.title;
+                    messageElement.innerHTML = noticeConfig.message;
+                }
+            }
+
+            // 공지사항 표시/숨김 토글 (관리자용)
+            function toggleNoticeVisibility() {
+                noticeConfig.enabled = !noticeConfig.enabled;
+                return noticeConfig.enabled;
+            }
+
+            // 공지사항 강제 표시 (관리자용)
+            function forceShowNotice() {
+                showNoticeModal();
+            }
+
+            // 공지사항 "오늘 하루 보지 않기" 설정 초기화 (관리자용)
+            function resetNoticeDontShowToday() {
+                localStorage.removeItem('noticeDontShowToday');
             }
 
             // ===== 이미지 관리 함수들 =====
